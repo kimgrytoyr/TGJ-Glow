@@ -26,37 +26,57 @@ public class CollisionDetector : MonoBehaviour {
 
 		bool hitGround = false;
 		for (int i = 0; i < hits.Length; i++) {
-			Debug.Log (hits [i].collider.name);
+			//Debug.Log (hits [i].collider.name);
 			if (hits[i].collider.CompareTag ("Wall")) {
-				Debug.Log (hits[i].collider.name);
+				//Debug.Log (hits[i].collider.name);
 				hitGround = true;
+			}
+			if (hits [i].collider.name == "Killzone") {
+				Player.SendMessage ("respawn");
 			}
 		}
 
 		if (hitGround) {
+			if (Player.GetComponent<PlayerController> ().triggeredJumping) {
+				Debug.Log (Player.GetComponent<Rigidbody2D> ().velocity.y);
+				// Recently jumped
+				return;
+			}
 			anim.SetBool ("Jumping_Ascending", false);
 			anim.SetBool ("Jumping_Descending", false);
 			anim.SetBool ("Running", true);
-			Player.SendMessage ("grounded", true);
-			Debug.Log ("We hit the ground!");
 			if (Player.GetComponent<PlayerController> ().stuckToWall) {
 				Player.GetComponent<PlayerController> ().Flip ();
 			}
-		} else {
+			Player.SendMessage ("grounded", true);
+			//Debug.Log ("We hit the ground!");
+		} else if (Player.GetComponent<PlayerController> ().isGrounded) {
 			anim.SetBool ("Running", false);
 			Player.SendMessage ("grounded", false);
-		}			
+			if (!Player.GetComponent<PlayerController> ().Jumping () && Player.GetComponent<PlayerController> ().triggeredJumping) {
+				Player.GetComponent<PlayerController> ().Flip ();
+			}
+		}	
 	}
 
 	private void OnTriggerEnter2D(Collider2D collider)
 	{
 		if (!collider.CompareTag ("Wall"))
 			return;
-		Debug.Log ("hit a wall");
-
+		
+//		Debug.Log ("hit a wall");
+//		Debug.Log (Player.GetComponent<PlayerController> ().isGrounded);
 		if (!Player.GetComponent<PlayerController> ().stuckToWall && Player.GetComponent<PlayerController> ().isGrounded) {
 			Player.GetComponent<PlayerController> ().Flip ();
 			return;
+		}
+
+//		Debug.Log ("Potentially falling off a platform..");
+//		Debug.Log (Player.GetComponent<PlayerController> ().Jumping ());
+
+		if (!Player.GetComponent<PlayerController> ().isGrounded && !Player.GetComponent<PlayerController> ().Jumping() && !Player.GetComponent<PlayerController> ().triggeredJumping && !Player.GetComponent<PlayerController>().falling) {
+			//Debug.Log (Player.GetComponent<Rigidbody2D> ().velocity.y);
+			Player.GetComponent<PlayerController> ().Flip ();
 		}
 
 		Player.SendMessage("wallStick", true);
@@ -67,12 +87,12 @@ public class CollisionDetector : MonoBehaviour {
 	}
 
 	private void OnTriggerExit2D(Collider2D collider) {
-		if (!collider.CompareTag ("Wall"))
+		if (!collider.CompareTag ("Wall") || Player.GetComponent<Rigidbody2D>().velocity.y != 0)
 			return;
 
+		Debug.Log (Player.GetComponent<Rigidbody2D> ().velocity.y);
 		Debug.Log ("Left a wall!");
-
+		Player.GetComponent<PlayerController> ().falling = true;
 		Player.SendMessage ("wallStick", false);
-
 	}
 }

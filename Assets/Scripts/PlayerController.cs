@@ -18,6 +18,10 @@ public class PlayerController : MonoBehaviour {
 	bool allowedToGlide = false;
 	bool hasJumped = false;
 
+	public bool jumping = false;
+	public bool falling = false;
+	public bool triggeredJumping = false;
+
 	Animator anim;
 
 	AudioSource jumpSound;
@@ -40,6 +44,11 @@ public class PlayerController : MonoBehaviour {
 		if (runDelay >= 0) {
 			runDelay -= Time.deltaTime;
 			return;
+		}
+
+		if (triggeredJumping && GetComponent<Rigidbody2D> ().velocity.y > 0.1f) {
+			jumping = true;
+			triggeredJumping = false;
 		}
 
 		if (stuckToWall && !isGrounded && lockY != 0.0f)
@@ -69,6 +78,7 @@ public class PlayerController : MonoBehaviour {
 			grounded(false);
 			wallStick(false);
 			allowedToGlide = true;
+			triggeredJumping = true;
 			Debug.Log ("Jumped");
 		}
 
@@ -130,6 +140,10 @@ public class PlayerController : MonoBehaviour {
 //		}
 	}
 
+	public bool Jumping() {
+		return jumping;
+	}
+
 	public void Flip() {
 		FaceDirection (-FacingDirection);
 		transform.eulerAngles = new Vector3 (0f, (transform.eulerAngles.y == 180f ? 0f : 180f), 0f);
@@ -151,10 +165,13 @@ public class PlayerController : MonoBehaviour {
 			lockY = transform.position.y;
 			playerRigidBody.gravityScale = 0;
 			playerRigidBody.velocity = new Vector2(0,0);
+			Debug.Log (playerRigidBody.velocity.y);
 			hasJumped = false;
 			allowedToGlide = false;
 			jumpTimer = 1.0f;
-			Debug.Log ("No longer jumping..");
+			jumping = false;
+			falling = false;
+			//Debug.Log ("No longer jumping..");
 		}
 
 		else
@@ -169,8 +186,11 @@ public class PlayerController : MonoBehaviour {
 	{
 		isGrounded = arg;
 		if (arg) {
-			Debug.Log ("No longer jumping..");
+			//Debug.Log ("No longer jumping..");
 			jumpTimer = 1.0f;
+			jumping = false;
+			falling = false;
+			wallStick (false);
 		} else {
 		}
 	}
@@ -189,39 +209,5 @@ public class PlayerController : MonoBehaviour {
 		FacingDirection = previousHeading;
 		transform.eulerAngles = previousEuler;
 	
-	}
-
-	void FixedUpdate() {
-		return;
-//		Bounds bounds = GetComponent<BoxCollider2D> ().bounds;
-//		RaycastHit2D hit = Physics2D.Raycast(new Vector2(bounds.min.x, bounds.min.y), -Vector2.up, 0.05f);
-//		Debug.DrawLine(new Vector3(bounds.min.x, bounds.min.y, 0f), new Vector3(0, -0.05f, 0), Color.red);
-//		bool hitGround = false;
-//		if (hit != null) {
-//			if (hit.collider != null) {
-//				if (hit.collider.CompareTag ("Ground")) {
-//					hitGround = true;
-//					anim.SetBool ("Jumping_Ascending", false);
-//					anim.SetBool ("Jumping_Descending", false);
-//					anim.SetBool ("Running", true);
-//				}
-//			}
-//		}
-//		Debug.Log (GetComponent<Rigidbody2D> ().velocity);
-//
-//
-//		if (GetComponent<Rigidbody2D> ().velocity.y > 0f) {
-//			// Ascending
-//			anim.SetBool ("Jumping_Ascending", true);
-//			anim.SetBool ("Jumping_Descending", false);
-//		} else if (GetComponent<Rigidbody2D> ().velocity.y < 0f) {
-//			// Descending
-//			anim.SetBool ("Jumping_Ascending", false);
-//			anim.SetBool ("Jumping_Descending", true);
-//		} else {
-//			anim.SetBool ("Jumping_Ascending", false);
-//			anim.SetBool ("Jumping_Descending", false);
-//		}
-//		grounded = hitGround;
 	}
 }
